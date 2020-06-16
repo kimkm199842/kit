@@ -4,8 +4,8 @@ def set_charset(name):
         "name": name,
         "level": 1,
         "hp": 100,
-        "items": ["돌맹이","돌덩이"],
-        "skill": ["돌던지기"]
+        "items": ["돌","돌덩이"],
+        "skill": ["돌 날리기"]
     }
     with open("save.txt",'w',encoding='utf-8') as f:
         json.dump(character,f, ensure_ascii = False , indent=4)
@@ -25,8 +25,8 @@ def charact(name):
         "name":name,
         "level":1,
         "hp": 100,
-        "items":["돌맹이","돌덩이"],
-        "skill":["돌던지기"]
+        "items":["돌","돌덩이"],
+        "skill":["돌 날리기"]
     }
     print("{0}님 반갑습니다. (hp{1})으로 게임을 시작합니다.".format(character["name"],))
 
