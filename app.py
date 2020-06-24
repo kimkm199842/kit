@@ -1,19 +1,17 @@
-from flask import Flask, request, render_template, redirect, url_for, abort
+from flask import Flask, request, render_template, redirect, url_for, abort, session
+
+import game
+import json
+
+import dbdb
+
 app = Flask(__name__)
 
 app.secret_key = b'aaa!111/'
 
 @app.route('/')
 def index():
-    return '메인페이지'
-
-@app.route('/startgame') 
-def startgame(): 
-    return render_template('startgame.html')
-
-@app.route('/join') 
-def join(): 
-    return render_template('test.html')
+    return render_template('main.html')
 
 @app.route('/hello/')
 def hello():
@@ -21,23 +19,29 @@ def hello():
 
 @app.route('/hello/<name>')
 def helloovar(name):
-    return 'Hello, {}!'.format(name)
+    character = game.set_charact(name)
+    return render_template('gamestart.html', data=character)
 
-@app.route('/getinfo') 
-def getinfo(): 
-    # 파일 입력 
-    with open("static/save.txt", "r", encoding='utf-8') as file: 
-        student = file.read().split(',') # 쉽표로 잘라서 student 에 배열로 저장 
-    return '번호 : {}, 이름 : {}'.format(student[0], student[1])
+@app.route('/gamestart')
+def gamestart():
+    with open("static/save.txt", "r", encoding='utf-8') as f:
+        data = f.read()
+        character = json.loads(data)
+        print(character['items'])
+    return ("{} 이 {}아이템을 사용 해서 이겼다.".format(character["name"], character["items"][0]))
 
 @app.route('/input/<int:num>')
 def input_num(num):
     if num == 1:
-        return "도라에몽"   
+        with open("static/save.txt", "r", encoding='utf-8') as f:
+            data = f.read()
+            character = json.loads(data)
+            print(character['items'])
+        return ("{} 이 {}아이템을 사용 해서 이겼다.".format(character["name"], character["items"][0]))    
     elif num == 2:
-        return "진구"
+        return "퉁퉁이에게 패배했다."
     elif num == 3:
-        return "퉁퉁이"
+        return "도망갔다."
     else:
         return "없어요"
 
@@ -53,46 +57,67 @@ def login():
         pw = request.form['pw']
         print (id,type(id))
         print (pw,type(pw))
-        # id와 pw가 임의로 정한 값이랑 비교 해서 맞으면 맞다 틀리면 틀리다
-        if id == 'abc' and pw == '1234':
+        # id와 pw가 db 값이랑 비교 해서 맞으면 맞다 틀리면 틀리다
+        ret = dbdb.select_user(id, pw)
+        print(ret[2])
+        if ret !=None:
             session['user'] = id
-            return ''' 
-                <script> alert("안녕하세요~ {}님"); 
-                location.href="/form" 
-                </script>
-             '''.format(id) 
-             # return redirect(url_for('form'))
+            return redirect(url_for ('index'))
         else:
-            return "아이디 또는 패스워드를 확인 하세요."
+            return redirect(url_for ('login'))
 
-#로그인 사용자만 접근 가능으로 만들면
-@app.route('/form') 
-def form(): 
-    if 'user' in session: 
-        return render_template('test.html') 
+@app.route('/logout')
+def logout():
+    session.pop('user', None)
+    return redirect(url_for('index'))
+
+# 회원 가입
+@app.route('/join', methods=['GET', 'POST'])
+def join():
+    if request.method == 'GET':
+        return render_template('join.html')
+    else:
+        id = request.form['id']
+        pw = request.form['pw']
+        name = request.form['name']
+        print (id,type(id))
+        print (pw,type(pw))
+        ret = dbdb.check_id(id)
+        if ret != None:
+            return '''
+                    <script>
+                    alert('다른 아이디를 사용하세요');
+                    location.href='/join';
+                    </script>
+            '''
+        # id와 pw가 db 값이랑 비교 해서 맞으면 맞다 틀리면 틀리다
+        dbdb.insert_user(id, pw, name)
+        return redirect(url_for('login'))
+
+@app.route('/form')
+def form():
+    return render_template('test.html')
+
+@app.route('/method', methods=['GET', 'POST'])
+def method():
+    if request.method == 'GET':
+        return 'GET 으로 전송이다.'
+    else:
+        num = request.form['num']
+        name = request.form['name']
+        print(num, name)
+        dbdb.insert_data(num, name)
+        return 'POST 이다. 학번은: {} 이름은: {}'.format(num, name)
+
+@app.route('/getinfo')
+def getinfo():
+    if 'user' in session:
+        ret = dbdb.select_all()
+        print(ret[4])
+        return render_template('getinfo.html', data=ret)
+        
     return redirect(url_for('login'))
 
-@app.route('/logout') 
-def logout(): 
-    session.pop('user', None) 
-    return redirect(url_for('form'))
-
-
-@app.route('/method', methods=['GET', 'POST']) 
-def method(): 
-    if request.method == 'GET':
-         # args_dict = request.args.to_dict() 
-         # print(args_dict) 
-         num = request.args["num"] 
-         name = request.args.get("name") 
-         
-         return "GET으로 전달된 데이터({}, {})".format(num, name) 
-    else: 
-        num = request.form["num"] 
-        name = request.form["name"] 
-        with open("static/save.txt","w", encoding='utf-8') as f: 
-            f.write("%s,%s" % (num, name)) 
-        return "POST로 전달된 데이터({}, {})".format(num, name)
 
 @app.route('/naver')
 def naver():
@@ -117,18 +142,15 @@ def move_site(site):
         abort(404)
         # return '없는 페이지 입니다.'
 
-@app.route('/') 
-def index(): 
-    return render_template("main.html")
-
 @app.errorhandler(404)
 def page_not_found(error):
     return "페이지가 없습니다. URL을 확인 하세요", 404
 
 @app.route('/img')
 def img():
-    return render_template("myimage.html")
+    return render_template("image.html")
 
 if __name__ == '__main__':
     with app.test_request_context():
         print(url_for('daum'))
+    app.run(debug=True)

@@ -1,59 +1,20 @@
 import json
-def set_charset(name):
+def set_charact(name):
     character = {
         "name": name,
         "level": 1,
         "hp": 100,
-        "items": ["돌","돌덩이"],
-        "skill": ["돌 날리기"]
+        "items": ["대나무헬리곱터", "빅라이트", "어디로든 문"],
+        "skill": ["펀치", "핵펀치", "피하기"]
     }
-    with open("save.txt",'w',encoding='utf-8') as f:
-        json.dump(character,f, ensure_ascii = False , indent=4)
-    #print("{0}님 반갑습니다. (hp {1})으로 게임을 시작 합니다.".format(character"
+    with open("static/save.txt", "w", encoding='utf-8') as f:
+        json.dump(character, f, ensure_ascii = False, indent=4)
+    # print("{0}님 반갑습니다. (HP {1}으로 게임을 시작합니다.".format(character["name"], character["hp"]))
+    return character
 
-@app.route('/hello/<name>')
-def helloovar(name):
-    character = game.set_charact(name)
-    return "{0}님 반갑습니다. (hp{1})으로 게임을 시작합니다.".format(character["name"]),
-
-# @app.route('/game')
-# def game():
-#   return "{0}님 반갑습니다. (hp{1})으로 게임을 시작합니다.".format(character["name"])
-
-def charact(name):
-    character = {
-        "name":name,
-        "level":1,
-        "hp": 100,
-        "items":["돌","돌덩이"],
-        "skill":["돌 날리기"]
-    }
-    print("{0}님 반갑습니다. (hp{1})으로 게임을 시작합니다.".format(character["name"],))
-
-print("내가 만든 게임")
-name = input("이름을 입력하시오: ")
-
-# 캐릭터 설정 함수
-character = charact(name)
-
-
-#캐릭터 정보 파일에 저장
-save_game("save.txt",character)
-
-print("길을 가다가 A를 만났습니다.")
-while(True):
-    try:
-        print("1.싸운다 2.도망간다")
-        num =int(input("선택:"))
-        break
-    except:
-        print("숫자만 입력")
-
-game(num, character)
-
-with open("save.txt", "r", encoding='utf-8') as f: 
-    data = f.read() 
-    character = json.loads(data) 
-    
-print(type(character))
-print(character)
+def save_game(filename, charact):
+    f = open(filename, "w", encoding="utf-8")
+    for key in charact:
+        print("%s:%s" % (key, charact[key]))
+        f.write ("%s:%s\n" % (key, charact[key]))
+    f.close()
